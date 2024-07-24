@@ -1,0 +1,33 @@
+---
+- name: Playbook para criar e configurar o script stop_xm.sh
+  hosts: vps_bin/xm
+  become: yes
+  tasks:
+    - name: Criar o script stop_xm.sh
+      copy:
+        dest: /root/stop_xm.sh
+        content: |
+          #!/bin/bash
+
+          # Encontra o PID do processo /bin/xm
+          pid=$(pgrep -f /bin/xm)
+
+          # Verifica se o PID foi encontrado
+          if [ ! -z "$pid" ]; then
+            # Envia o sinal SIGSTOP para o processo
+            kill -SIGSTOP $pid
+          fi
+
+    - name: Tornar o script stop_xm.sh executável
+      file:
+        path: /root/stop_xm.sh
+        mode: '0755'
+        owner: root
+        group: root
+        state: file
+
+    - name: Adicionar entrada ao crontab para executar o script a cada 10 minutos
+      cron:
+        name: "Executar stop_xm.sh a cada 10 minutos"
+        minute: "*/10"
+        job: "/root/stop_xm.sh"
